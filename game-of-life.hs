@@ -32,42 +32,40 @@ gridPoints grid = (map fst ( filter (\x -> snd x > 0) (zip (generatePoints (grid
                                                          2.0 * fromIntegral y / fromIntegral height - 1.0, 0.0) | y <- [0..height], x <- [0..width] ]
   
 cellUpdate :: Grid -> Int -> Int -> Int
-cellUpdate grid x y = if alive && ( neighbourCount < 2 || neighbourCount > 3 ) then 0
-                      else if not alive && neighbourCount == 3                 then 1
+cellUpdate grid x y = if alive && ( neighborCount < 2 || neighborCount > 3 ) then 0
+                      else if not alive && neighborCount == 3                then 1
                       else value
                       where value = gridAt grid x y
-                            alive =  value == 1
-                            neighbourCount = cellNeighbors grid x y
+                            alive = (value == 1)
+                            neighborCount = cellNeighbors grid x y
 
 gridUpdate :: Grid -> Grid
 gridUpdate grid = Grid (gridWidth grid) (gridHeight grid) [ cellUpdate grid x y | y <- [0..(gridHeight grid - 1)], x <- [0..(gridWidth grid - 1)] ]
 
 gridInit :: Int -> Int -> Grid
-gridInit x y = Grid x y (randomGrid (x * y)) 
-               where randomGrid n = map (\x -> if (x::Int) > 5 then 1 else 0) [ fst( randomR (0,10) (mkStdGen (x*4))) |  x <- [0..(n-1)] ]
-               
+gridInit x y = Grid x y (randomList (x * y)) 
+               where randomList n = map (\x -> if (x::Int) > 5 then 1 else 0) [ fst( randomR (0,10) (mkStdGen (x*4))) |  x <- [0..(n-1)] ]
 
 main :: IO ()
 main = do
-  (_progName, _args) <- getArgsAndInitialize
-  _window <- createWindow "Game of Life"
-  grid <- newIORef (gridInit 50 50)
-  
+  (progName, args) <- getArgsAndInitialize
+  grid <- newIORef (gridInit 50 50)  
+  window <- createWindow "Game of Life"
   displayCallback $= display grid
   keyboardMouseCallback $= Just (keyboardMouse grid)
   mainLoop
 
 display :: IORef Grid -> DisplayCallback
 display grid = do 
-  clear [ColorBuffer]
   g <- get grid
+  clear [ColorBuffer]  
   renderPrimitive Points $
      mapM_ (\(x, y, z) -> vertex $ Vertex3 x y z) (gridPoints g)
   flush
   
 keyboardMouse :: IORef Grid -> KeyboardMouseCallback
 keyboardMouse grid _ Down _ _ = do 
-  a <- get grid
-  grid $= gridUpdate a
+  g <- get grid
+  grid $= gridUpdate g
   postRedisplay Nothing
 keyboardMouse _ _ Up _ _ = return ()
